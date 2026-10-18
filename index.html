@@ -23,7 +23,7 @@
   #bg { position:fixed; inset:0; z-index:-2; background:
       radial-gradient(600px 400px at 15% 8%, rgba(217,164,65,.10), transparent 60%),
       radial-gradient(700px 500px at 85% 30%, rgba(160,25,25,.10), transparent 60%),
-      radial-gradient(500px 300px at 50% 95%, rgba(217,164,65,.07), transparent 60%),
+      radial-gradient(800px 600px at 50% 95%, rgba(217,164,65,.07), transparent 60%),
       #0B0B0D; }
   #stars { position:fixed; inset:0; z-index:-1; pointer-events:none; }
   /* device status bar */
@@ -295,7 +295,7 @@ var favs = load("sm:favs", []), groups = load("sm:groups", []);
 
 function load(k, fb){ try{ var v = JSON.parse(localStorage.getItem(k)); return v==null?fb:v; }catch(e){ return fb; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
-function fmt(s){ if(!isFinite(s)) return "0:00"; s=Math.floor(s); return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
+function fmt(s){ if(!isFinite(s)) return "0:00"; s=Math.floor(s); return Math.floor(s/60)+":("+"0"+(s%60)).slice(-2); }
 function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(function(){t.style.display="none";},2600); }
 function trk(){ return qpos<0 ? null : TRACKS[queue[qpos]]; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -389,8 +389,8 @@ function drawEq(t){
   for(var m=1;m<tops.length;m++){
     var xc = (tops[m-1][0]+tops[m][0])/2, yc = (tops[m-1][1]+tops[m][1])/2;
     eqX.quadraticCurveTo(tops[m-1][0], tops[m-1][1], xc, yc);
+    eqX.lineTo(tops[tops.length-1][0], tops[tops.length-1][1]); eqX.stroke();
   }
-  eqX.lineTo(tops[tops.length-1][0], tops[tops.length-1][1]); eqX.stroke();
   eqX.shadowBlur = 0;
 }
 sizeEq(); window.addEventListener("resize", sizeEq); requestAnimationFrame(drawEq);
@@ -600,7 +600,7 @@ function shareTrack(t){
 document.getElementById("pShare").addEventListener("click", function(){ var t=trk(); if(t) shareTrack(t); });
 document.getElementById("textBtn").addEventListener("click", function(){
   if(!TEXT_NUMBER){ toast("Text list opens as soon as Dee adds his number — check back soon."); return; }
-  window.location.href = "sms:"+"+"+TEXT_NUMBER+"?&body="+encodeURIComponent("JOIN");
+  window.location.href = "sms:"+TEXT_NUMBER+"?&body="+encodeURIComponent("JOIN");
 });
 
 /* ---------- releases.json ---------- */
@@ -608,12 +608,17 @@ fetch("releases.json",{cache:"no-store"}).then(function(r){ return r.json(); }).
   if(j && j.releases){ newIds = j.releases; renderJuke(); }
   if(j && j.comingSoon){ comingSoon = j.comingSoon; renderSoon(); }
 }).catch(function(){});
+function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
 function renderSoon(){
   var el = document.getElementById("soonrow"); el.innerHTML = "";
   if(!comingSoon.length){ el.innerHTML = "<div style='color:var(--muted);font-size:13.5px;padding:8px 6px;'>Nothing announced yet — new drops appear here first.</div>"; return; }
   comingSoon.forEach(function(title){
     var d = document.createElement("div"); d.className = "soon";
-    d.innerHTML = '<div class="q">?</div><div class="st">'+escapeHtml(title)+'</div><div class="sb">SOON</div>';
+    var s = slug(title);
+    d.innerHTML = '<div class="q">?</div><img class="sooncover" src="covers/'+s+'.jpg" alt="'+escapeHtml(title)+' cover" style="display:none;width:100%;border-radius:10px;" onerror="this.style.display=\'none\';this.previousElementSibling.style.display=\'block\';">'
+      +'<div class="st">'+escapeHtml(title)+'</div><div class="sb">SOON</div>';
+    var img = d.querySelector("img.sooncover"), q = d.querySelector(".q");
+    img.onload = function(){ img.style.display="block"; q.style.display="none"; };
     el.appendChild(d);
   });
 }
